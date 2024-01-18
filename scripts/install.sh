@@ -8,6 +8,7 @@
 # Configuration
 MUJOCO_V=210 # Mujoco Version
 
+sudo apt install -y wget python3-pip
 # Install maple
 git clone https://github.com/UT-Austin-RPL/maple &
 
@@ -17,7 +18,7 @@ mkdir ~/.mujoco || true
 if [ "$MUJOCO_V" == "200" ];
 then
   sudo apt-get update
-  sudo apt install unzip
+  sudo apt install -y unzip
   wget https://www.roboti.us/download/mujoco200_linux.zip
   unzip mujoco200_linux.zip
   mv mujoco200_linux ~/.mujoco/mujoco$MUJOCO_V || true
@@ -30,7 +31,7 @@ then
   mv mujoco210 ~/.mujoco/mujoco$MUJOCO_V
 fi
 # Dependencies
-sudo apt install libgl1-mesa-dev libgl1-mesa-glx libglew-dev libosmesa6-dev software-properties-common net-tools xpra xserver-xorg-dev libglfw3-dev patchelf
+sudo apt install -y libgl1-mesa-dev libgl1-mesa-glx libglew-dev libosmesa6-dev software-properties-common net-tools xpra xserver-xorg-dev libglfw3-dev patchelf
 string="export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$HOME/.mujoco/mujoco$MUJOCO_V/bin"
 temp=$(cat ~/.bashrc | grep "$string")
 if [ -z "$temp" ]; then
@@ -40,6 +41,8 @@ if [ -z "$temp" ]; then
 else
 	echo "No export string added to bashrc (it is already there)"
 fi
+# This is needed for the docker build:
+export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:$HOME/.mujoco/mujoco$MUJOCO_V/bin
 
 # Install and set up anaconda
 wget https://repo.anaconda.com/archive/Anaconda3-2022.10-Linux-x86_64.sh
@@ -54,10 +57,14 @@ else
 	echo "No export string added to bashrc (it is already there)"
 fi
 source ~/.bashrc
+# This is needed in the docker build:
+export PATH=/root/anaconda3/bin:$PATH
 conda init bash
 
 # Fix MuJoCo setup
-git clone https://github.com/nimrod-gileadi/mujoco-py.git &
+# Container fix to build mujoco-py
+pip install Cython==3.0.0a10
+git clone https://github.com/nimrod-gileadi/mujoco-py.git
 cd mujoco-py
 pip install --user .
 cd ..
